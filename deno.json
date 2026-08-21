@@ -10,8 +10,8 @@
     "lint": "deno lint src scripts tests vite.config.ts",
     "test": "deno test -A tests/",
     "test:coverage": "deno test --clean -A --reload --coverage=coverage tests/ && deno coverage --threshold=90 --include=\"^file:.*/src/lib/\" --lcov --output=coverage/lcov.info coverage/",
-    "cf:types": "deno run -A npm:wrangler@latest types",
-    "cf:dry-run": "deno run -A npm:wrangler@latest deploy --dry-run"
+    "cf:types": "npx --yes wrangler@4 types",
+    "cf:dry-run": "npx --yes wrangler@4 deploy --dry-run"
   },
   "imports": {
     "@/": "./",
