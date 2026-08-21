@@ -25,7 +25,7 @@ export default define.page(() => (
           しりとり検索
         </h1>
         <p class="my-2 mb-5 max-w-[42rem] text-[.95rem] text-[#607080] max-sm:my-1 max-sm:mb-3">
-          先頭・末尾のひらがな、またはその両方から、使える名詞を探します。
+          先頭・末尾のひらがな、またはその両方から、使える名詞を検索できます
         </p>
         <SearchIsland />
         <footer class="mt-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pt-4 text-[.7rem] text-[#928a81] max-sm:pt-2">

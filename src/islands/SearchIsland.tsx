@@ -272,7 +272,7 @@ export default function SearchIsland() {
 
       {!response && !error && !loading && (
         <p class="grid min-h-40 flex-1 place-items-center rounded-3xl border border-dashed border-[#d9cec0] p-4 text-center text-sm text-[#687786]">
-          ひらがなを1文字入力すると自動で検索します。
+          ひらがなを1文字入力すると自動で検索
         </p>
       )}
     </div>
