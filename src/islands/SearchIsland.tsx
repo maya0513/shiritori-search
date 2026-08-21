@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { displayLimitForViewport } from "../lib/layout.ts";
 import { isHiraganaCharacter } from "../lib/normalize.ts";
 import { pickRandom } from "../lib/random.ts";
+import { readSearchResponse } from "../lib/search-client.ts";
 import type { SearchResponse, WordResult } from "../lib/types.ts";
 
 const PAGE_SIZE = 10;
@@ -32,39 +33,6 @@ function useViewportLimit(): number {
   }, []);
 
   return limit;
-}
-
-function getApiError(body: unknown): string | null {
-  if (typeof body !== "object" || body === null || !("error" in body)) {
-    return null;
-  }
-
-  const error = body.error;
-  return typeof error === "string" ? error : null;
-}
-
-async function readSearchResponse(response: Response): Promise<SearchResponse> {
-  const rawBody = await response.text();
-  let body: unknown = null;
-
-  try {
-    body = JSON.parse(rawBody);
-  } catch {
-    // Some proxy and platform errors are returned as plain text.
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      getApiError(body) ??
-        "検索サーバーでエラーが発生しました。時間をおいて再試行してください。",
-    );
-  }
-
-  if (typeof body !== "object" || body === null) {
-    throw new Error("検索結果を読み込めませんでした。");
-  }
-
-  return body as SearchResponse;
 }
 
 function DiceIcon() {

@@ -24,6 +24,12 @@ export interface DictionaryIndex {
   byLast: Record<string, IndexedWord[]>;
 }
 
+export interface DictionaryIndexAsset {
+  metadata: DictionaryMetadata;
+  byFirst?: Record<string, IndexedWord[]>;
+  byLast?: Record<string, IndexedWord[]>;
+}
+
 export interface SearchResponse {
   first: string | null;
   last: string | null;

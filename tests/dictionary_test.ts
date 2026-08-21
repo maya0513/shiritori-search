@@ -1,6 +1,7 @@
 import { assertEquals, assertRejects, assertStrictEquals } from "@std/assert";
 import {
   type AssetFetcher,
+  DictionaryAssetError,
   loadDictionaryIndex,
 } from "../src/lib/dictionary.ts";
 import type { DictionaryIndex } from "../src/lib/types.ts";
@@ -50,4 +51,54 @@ Deno.test("辞書アセットのHTTPエラーを伝播する", async () => {
     Error,
     "Dictionary asset unavailable: first",
   );
+});
+
+Deno.test("次元ごとの辞書アセットを読み込める", async () => {
+  const source: AssetFetcher = {
+    fetch: () =>
+      Promise.resolve(
+        Response.json({
+          metadata: index.metadata,
+          byFirst: {
+            あ: [],
+          },
+        }),
+      ),
+  };
+
+  const result = await loadDictionaryIndex(source, "first");
+  assertEquals(result.byFirst, { あ: [] });
+});
+
+Deno.test("不正な辞書JSONを拒否する", async () => {
+  const source: AssetFetcher = {
+    fetch: () => Promise.resolve(Response.json({ metadata: index.metadata })),
+  };
+
+  await assertRejects(
+    () => loadDictionaryIndex(source, "first"),
+    DictionaryAssetError,
+    "Dictionary asset has an invalid shape: first",
+  );
+});
+
+Deno.test("辞書の読み込み失敗を次回のリクエストへ持ち越さない", async () => {
+  let calls = 0;
+  const source: AssetFetcher = {
+    fetch: () => {
+      calls++;
+      return calls === 1
+        ? Promise.resolve(new Response(null, { status: 503 }))
+        : Promise.resolve(Response.json(index));
+    },
+  };
+
+  await assertRejects(
+    () => loadDictionaryIndex(source, "first"),
+    DictionaryAssetError,
+  );
+  const result = await loadDictionaryIndex(source, "first");
+
+  assertEquals(result, index);
+  assertEquals(calls, 2);
 });

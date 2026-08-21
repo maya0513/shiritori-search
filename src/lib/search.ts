@@ -1,7 +1,7 @@
 import { type AssetFetcher, loadDictionaryIndex } from "./dictionary.ts";
 import { isHiraganaCharacter } from "./normalize.ts";
 import type {
-  DictionaryIndex,
+  DictionaryIndexAsset,
   IndexedWord,
   SearchResponse,
   WordResult,
@@ -84,16 +84,16 @@ function getSearchDimension(params: SearchParams): SearchDimension {
 }
 
 function findMatches(
-  index: DictionaryIndex,
+  index: DictionaryIndexAsset,
   params: SearchParams,
 ): IndexedWord[] {
   if (params.first) {
-    return (index.byFirst[params.first] ?? []).filter((word) =>
+    return (index.byFirst?.[params.first] ?? []).filter((word) =>
       !params.last || word.last === params.last
     );
   }
 
-  return params.last ? index.byLast[params.last] ?? [] : [];
+  return params.last ? index.byLast?.[params.last] ?? [] : [];
 }
 
 export async function searchWords(
