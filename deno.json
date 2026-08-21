@@ -1,0 +1,59 @@
+{
+  "nodeModulesDir": "manual",
+  "tasks": {
+    "dev": "deno run -A npm:vite@^7 --mode development",
+    "data:build": "deno run -A scripts/build-dictionary.ts",
+    "build": "deno task data:build && vite build --mode fresh && deno run -A scripts/prepare-cloudflare.ts && vite build --mode cloudflare",
+    "start": "deno serve -A _fresh/server.js",
+    "check": "deno check src/client.ts src/cloudflare-stub.ts src/main.ts src/utils.ts src/routes/_app.tsx src/routes/index.tsx src/routes/license.tsx src/routes/api/search.ts src/islands/SearchIsland.tsx src/lib/*.ts scripts/*.ts tests/*.ts",
+    "fmt:check": "deno fmt --check deno.json src scripts tests vite.config.ts README.md",
+    "lint": "deno lint src scripts tests vite.config.ts",
+    "test": "deno test -A tests/",
+    "test:coverage": "deno test --clean -A --reload --coverage=coverage tests/ && deno coverage --threshold=90 --include=\"^file:.*/src/lib/\" --lcov --output=coverage/lcov.info coverage/",
+    "cf:types": "deno run -A npm:wrangler@latest types",
+    "cf:dry-run": "deno run -A npm:wrangler@latest deploy --dry-run"
+  },
+  "imports": {
+    "@/": "./",
+    "fresh": "jsr:@fresh/core@^2",
+    "preact": "npm:preact@^10",
+    "@preact/signals": "npm:@preact/signals@^2",
+    "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1",
+    "vite": "npm:vite@^7",
+    "tailwindcss": "npm:tailwindcss@^4",
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4",
+    "@cloudflare/vite-plugin": "npm:@cloudflare/vite-plugin@^1.6.0",
+    "fflate": "npm:fflate@^0.8.2",
+    "@std/assert": "jsr:@std/assert@^1"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "preact",
+    "strict": true,
+    "types": ["vite/client", "./cloudflare.d.ts"]
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "include": [
+        "ban-untagged-todo",
+        "eqeqeq",
+        "no-eval",
+        "no-explicit-any",
+        "no-non-null-assertion",
+        "no-sparse-arrays",
+        "no-sync-fn-in-async-fn",
+        "no-throw-literal",
+        "no-unsafe-finally",
+        "react-rules-of-hooks"
+      ]
+    }
+  },
+  "coverage": {
+    "thresholds": {
+      "lines": 90,
+      "functions": 90,
+      "branches": 90
+    }
+  }
+}
