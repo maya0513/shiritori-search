@@ -34,6 +34,58 @@ function useViewportLimit(): number {
   return limit;
 }
 
+function getApiError(body: unknown): string | null {
+  if (typeof body !== "object" || body === null || !("error" in body)) {
+    return null;
+  }
+
+  const error = body.error;
+  return typeof error === "string" ? error : null;
+}
+
+async function readSearchResponse(response: Response): Promise<SearchResponse> {
+  const rawBody = await response.text();
+  let body: unknown = null;
+
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    // Some proxy and platform errors are returned as plain text.
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      getApiError(body) ??
+        "検索サーバーでエラーが発生しました。時間をおいて再試行してください。",
+    );
+  }
+
+  if (typeof body !== "object" || body === null) {
+    throw new Error("検索結果を読み込めませんでした。");
+  }
+
+  return body as SearchResponse;
+}
+
+function DiceIcon() {
+  return (
+    <svg
+      class="h-5 w-5 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+      <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" />
+      <circle cx="16" cy="16" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export default function SearchIsland() {
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
@@ -84,11 +136,7 @@ export default function SearchIsland() {
 
     setLoading(true);
     void fetch(`/api/search?${params}`, { signal: controller.signal })
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.error ?? "検索に失敗しました。");
-        return body as SearchResponse;
-      })
+      .then(readSearchResponse)
       .then((result) => {
         if (!active) return;
         setResponse(result);
@@ -211,10 +259,11 @@ export default function SearchIsland() {
           </div>
           <div class="flex items-center justify-between gap-3 pt-3">
             <button
-              class="rounded-2xl border-0 bg-[#f3dfd7] px-4 py-3 font-extrabold text-[#a84435] transition hover:bg-[#efd0c5] disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex items-center gap-2 rounded-2xl border-0 bg-[#e56b55] px-4 py-3 font-extrabold text-[#fffaf2] shadow-[0_.5rem_1.25rem_rgba(189,89,64,0.22)] transition hover:-translate-y-0.5 hover:bg-[#cf5946] focus:outline-none focus:ring-4 focus:ring-[#e56b5533] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
               type="button"
               onClick={randomRefresh}
             >
+              <DiceIcon />
               別の名詞を表示
             </button>
           </div>
