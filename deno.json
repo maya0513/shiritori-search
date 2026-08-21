@@ -3,7 +3,8 @@
   "tasks": {
     "dev": "deno run -A npm:vite@^7 --mode development",
     "data:build": "deno run -A scripts/build-dictionary.ts",
-    "build": "deno task data:build && vite build --mode fresh && deno run -A scripts/prepare-cloudflare.ts && vite build --mode cloudflare",
+    "build": "deno task data:build && vite build && deno task verify:cloudflare",
+    "verify:cloudflare": "deno run -A scripts/verify-cloudflare-build.ts",
     "start": "deno serve -A _fresh/server.js",
     "check": "deno check src/client.ts src/cloudflare-stub.ts src/main.ts src/utils.ts src/routes/_app.tsx src/routes/index.tsx src/routes/license.tsx src/routes/api/search.ts src/islands/SearchIsland.tsx src/lib/*.ts scripts/*.ts tests/*.ts",
     "fmt:check": "deno fmt --check deno.json src scripts tests vite.config.ts README.md",

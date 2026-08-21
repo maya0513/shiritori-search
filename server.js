@@ -1,4 +1,4 @@
-import server from "./_fresh/server.js";
+import server from "fresh:server_entry";
 
 export default {
   fetch: server.fetch,

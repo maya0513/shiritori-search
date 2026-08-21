@@ -4,13 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig(({ mode }) => {
-  const isFreshBootstrap = mode === "fresh";
   const isLocalDevelopment = mode === "development";
-  const isCloudflareBuild = mode === "cloudflare" || mode === "production";
-  const useLocalAssets = isFreshBootstrap || isLocalDevelopment;
 
   return {
-    resolve: useLocalAssets
+    resolve: isLocalDevelopment
       ? {
         alias: {
           "cloudflare:workers":
@@ -27,9 +24,7 @@ export default defineConfig(({ mode }) => {
         staticDir: "./static",
       }),
       tailwindcss(),
-      ...(isCloudflareBuild
-        ? [cloudflare({ viteEnvironment: { name: "ssr" } })]
-        : []),
+      cloudflare({ viteEnvironment: { name: "ssr" } }),
     ],
   };
 });
