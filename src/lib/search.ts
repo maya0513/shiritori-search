@@ -1,6 +1,11 @@
 import { type AssetFetcher, loadDictionaryIndex } from "./dictionary.ts";
 import { isHiraganaCharacter } from "./normalize.ts";
-import type { IndexedWord, SearchResponse, WordResult } from "./types.ts";
+import type {
+  DictionaryIndex,
+  IndexedWord,
+  SearchResponse,
+  WordResult,
+} from "./types.ts";
 
 export const PAGE_SIZE = 10;
 export const CANDIDATE_SIZE = 100;
@@ -13,6 +18,8 @@ export interface SearchParams {
   page: number;
   limit: number;
 }
+
+type SearchDimension = "first" | "last";
 
 function parseSingleKana(value: string | null, name: string): string | null {
   if (value === null || value === "") return null;
@@ -72,23 +79,30 @@ function toPublicWord(word: IndexedWord): WordResult {
   };
 }
 
+function getSearchDimension(params: SearchParams): SearchDimension {
+  return params.first ? "first" : "last";
+}
+
+function findMatches(
+  index: DictionaryIndex,
+  params: SearchParams,
+): IndexedWord[] {
+  if (params.first) {
+    return (index.byFirst[params.first] ?? []).filter((word) =>
+      !params.last || word.last === params.last
+    );
+  }
+
+  return params.last ? index.byLast[params.last] ?? [] : [];
+}
+
 export async function searchWords(
   url: URL,
   assets: AssetFetcher,
 ): Promise<SearchResponse> {
   const params = parseSearchParams(url);
-  const index = await loadDictionaryIndex(
-    assets,
-    params.first ? "first" : "last",
-  );
-  const source = params.first
-    ? index.byFirst[params.first] ?? []
-    : params.last
-    ? index.byLast[params.last] ?? []
-    : [];
-  const matched = params.last
-    ? source.filter((word) => word.last === params.last)
-    : source;
+  const index = await loadDictionaryIndex(assets, getSearchDimension(params));
+  const matched = findMatches(index, params);
 
   const pageCount = Math.max(1, Math.ceil(matched.length / params.limit));
   const page = Math.min(params.page, pageCount);

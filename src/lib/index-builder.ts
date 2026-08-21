@@ -14,15 +14,19 @@ export interface RawDictionary {
   words: RawWord[];
 }
 
+const JAPANESE_COLLATOR = new Intl.Collator("ja");
+
 interface MutableWord {
   reading: string;
   spellings: Set<string>;
 }
 
 function compareWords(left: IndexedWord, right: IndexedWord): number {
-  const collator = new Intl.Collator("ja");
-  return collator.compare(left.reading, right.reading) ||
-    collator.compare(left.spellings.join("・"), right.spellings.join("・"));
+  return JAPANESE_COLLATOR.compare(left.reading, right.reading) ||
+    JAPANESE_COLLATOR.compare(
+      left.spellings.join("・"),
+      right.spellings.join("・"),
+    );
 }
 
 function addSpelling(
@@ -65,7 +69,6 @@ export function buildDictionaryIndex(
     }
   }
 
-  const collator = new Intl.Collator("ja");
   const words: IndexedWord[] = [...groups.values()]
     .map((group, index) => {
       const boundary = normalizeBoundary(group.reading);
@@ -75,7 +78,7 @@ export function buildDictionaryIndex(
       return {
         id: index,
         reading: group.reading,
-        spellings: [...group.spellings].sort(collator.compare),
+        spellings: [...group.spellings].sort(JAPANESE_COLLATOR.compare),
         first: boundary.first,
         last: boundary.last,
       };

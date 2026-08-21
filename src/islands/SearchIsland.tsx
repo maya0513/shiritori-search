@@ -1,64 +1,56 @@
 import { useEffect, useState } from "preact/hooks";
 import { displayLimitForViewport } from "../lib/layout.ts";
+import { isHiraganaCharacter } from "../lib/normalize.ts";
 import { pickRandom } from "../lib/random.ts";
 import type { SearchResponse, WordResult } from "../lib/types.ts";
 
 const PAGE_SIZE = 10;
 
-function isHiragana(value: string): boolean {
-  return Array.from(value).length === 1 && /^\p{Script=Hiragana}$/u.test(value);
-}
-
-function getBrowserWindow(): Window | null {
-  return typeof globalThis.window === "undefined" ? null : globalThis.window;
-}
-
-function displayLimit(): number {
-  const browserWindow = getBrowserWindow();
-  if (!browserWindow) return PAGE_SIZE;
+function getDisplayLimit(): number {
+  if (typeof globalThis.window === "undefined") return PAGE_SIZE;
   return displayLimitForViewport(
-    browserWindow.innerWidth,
-    browserWindow.innerHeight,
+    globalThis.window.innerWidth,
+    globalThis.window.innerHeight,
   );
+}
+
+function useViewportLimit(): number {
+  const [limit, setLimit] = useState(getDisplayLimit);
+
+  useEffect(() => {
+    if (typeof globalThis.window === "undefined") return;
+
+    const update = () => setLimit(getDisplayLimit());
+    update();
+    globalThis.window.addEventListener("resize", update);
+    globalThis.window.visualViewport?.addEventListener("resize", update);
+
+    return () => {
+      globalThis.window.removeEventListener("resize", update);
+      globalThis.window.visualViewport?.removeEventListener("resize", update);
+    };
+  }, []);
+
+  return limit;
 }
 
 export default function SearchIsland() {
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
-  const [limit, setLimit] = useState(displayLimit);
+  const limit = useViewportLimit();
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [shown, setShown] = useState<WordResult[]>([]);
-  const [randomMode, setRandomMode] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const browserWindow = getBrowserWindow();
-    if (!browserWindow) return;
+    if (!response || response.total === 0) return;
 
-    const update = () => {
-      const next = displayLimit();
-      setLimit((previous) => {
-        if (previous === next) return previous;
-        if (response) {
-          if (randomMode) {
-            const picked = pickRandom(response.candidates, shown, next);
-            setShown(picked.words);
-          } else {
-            setShown(response.results.slice(0, next));
-          }
-        }
-        return next;
-      });
-    };
-    browserWindow.addEventListener("resize", update);
-    browserWindow.visualViewport?.addEventListener("resize", update);
-    return () => {
-      browserWindow.removeEventListener("resize", update);
-      browserWindow.visualViewport?.removeEventListener("resize", update);
-    };
-  }, [response, randomMode, shown]);
+    setShown((current) =>
+      pickRandom(response.candidates, current, limit).words
+    );
+  }, [limit, response]);
 
   useEffect(() => {
     let active = true;
@@ -68,11 +60,10 @@ export default function SearchIsland() {
     setNotice("");
     setResponse(null);
     setShown([]);
-    setRandomMode(false);
 
     if (
-      (!first && !last) || (first && !isHiragana(first)) ||
-      (last && !isHiragana(last))
+      (!first && !last) || (first && !isHiraganaCharacter(first)) ||
+      (last && !isHiraganaCharacter(last))
     ) {
       if (first || last) {
         setError("先頭文字または末尾文字を、ひらがな1文字で入力してください。");
@@ -103,13 +94,8 @@ export default function SearchIsland() {
         setResponse(result);
         if (result.total === 0) {
           setShown([]);
-          setRandomMode(false);
           setNotice("条件に合う名詞は見つかりませんでした。");
-          return;
         }
-        const picked = pickRandom(result.candidates, [], limit);
-        setShown(picked.words);
-        setRandomMode(true);
       })
       .catch((caught: unknown) => {
         if (
@@ -138,7 +124,6 @@ export default function SearchIsland() {
     if (!response || shown.length === 0) return;
     const picked = pickRandom(response.candidates, shown, limit);
     setShown(picked.words);
-    setRandomMode(true);
     setNotice(
       picked.exhausted
         ? "候補が少ないため、表示できる別の名詞が限られています。"
